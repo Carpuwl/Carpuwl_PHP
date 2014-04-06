@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__) . "/JSONResponseHandler.php";
 
 class USER extends JSONResponseHandler {
 

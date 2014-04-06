@@ -1,7 +1,7 @@
 <?php
 require_once dirname(__FILE__) . '/db_connect.php';
 require_once dirname(__FILE__) . '/lib/user_functions.php';
-require_once dirname(__FILE__) . '/JSONResponseHandler.php';
+require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
 //connect to the database
 $db = new DB_CONNECT(); 
