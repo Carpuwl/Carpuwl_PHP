@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user->create($fb_fk, $name, $phone);
     
     } else {
-        $json->json_response_error("required field(s) missing");
+        $json->json_response_error("Required field(s) missing");
     }
 
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -35,11 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user->get($fb_fk);
 
     } else {
-        $json->json_response_error("required field(s) missing");
+        $json->json_response_error("Required field(s) missing");
     }
 
 } else {
-    $json->json_response_success("Request Failed: REQUEST_METHOD not recognized");
+    $json->json_response_error("Request Failed: REQUEST_METHOD not recognized");
 }
 
 ?>
