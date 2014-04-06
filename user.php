@@ -1,20 +1,20 @@
 <?php
 require_once dirname(__FILE__) . '/db_connect.php';
-require_once dirname(__FILE__) . '/user_tools.php';
+require_once dirname(__FILE__) . '/lib/user_functions.php';
 require_once dirname(__FILE__) . '/JSONResponseHandler.php';
 
 //connect to the database
 $db = new DB_CONNECT(); 
 $json = new JSONResponseHandler();
-$user = new USER($json);
+$user = new USER();
 //json response array
 $response = array();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['fb_fk']) //fb link of the user 
-        && isset($_POST['phone'])
-        && isset($_POST['name'])) { //phone number of the user
+        && isset($_POST['phone']) //phone number of the user
+        && isset($_POST['name'])) { //Name of the user
         
         $fb_fk = doubleval($_POST['fb_fk']);
         $name = $_POST['name'];

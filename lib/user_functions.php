@@ -1,12 +1,8 @@
 <?php
 
-class USER {
+class USER extends JSONResponseHandler {
 
-    public $json;
-
-    public function __construct($json) {
-        $this->json = $json;
-    }
+    public function __construct() {}
 
     public function get ($fb_fk) {
    
@@ -30,16 +26,16 @@ class USER {
                     'phone' => $row['phone']
                 );
 
-                $this->json->json_response_success("User successfully retrieved!", $response);
+                $this->json_response_success("User successfully retrieved!", $response);
                 
             } else {
                 
-                $this->json->json_response_error("Erro getting user!");
+                $this->json_response_error("Erro getting user!");
             }
 
         } else {
             
-            $this->json->json_response_error("Error getting user - empty query returned");
+            $this->json_response_error("Error getting user - empty query returned");
         }
     }
 
@@ -48,7 +44,7 @@ class USER {
         $result = mysql_fetch_array(mysql_query("SELECT EXISTS(SELECT * FROM user WHERE fb_fk = $fb_fk);"));
         
         if ($result[0]) {
-            $this->json->json_response_success("User successfully signed in!");
+            $this->json_response_success("User successfully signed in!");
 
         } else {
             $result = mysql_query(
@@ -56,9 +52,9 @@ class USER {
                 VALUES ($fb_fk, '$name', '$phone');");    
 
             if ($result) {
-                $this->json->json_response_success("User successfully created!");
+                $this->json_response_success("User successfully created!");
             } else {
-                $this->json->json_response_error("Error occurred creating a user, or users already exists");
+                $this->json_response_error("Error occurred creating a user, or users already exists");
             }
         }
     } 
