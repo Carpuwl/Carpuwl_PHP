@@ -31,7 +31,7 @@ class USER extends JSONResponseHandler {
                 
             } else {
                 
-                $this->json_response_error("Erro getting user!");
+                $this->json_response_error("Error getting user!");
             }
 
         } else {
