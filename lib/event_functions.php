@@ -8,6 +8,9 @@ class EVENT extends JSONResponseHandler
 {    
     public function __construct() {}
 
+    /** This method is used to retrieve the data for a specific event
+     * @param $event_fk : the fk of the event bring retrieved
+     */
     public function get ($event_fk) {
 
         $result = mysql_query("SELECT * FROM events e
@@ -16,7 +19,6 @@ class EVENT extends JSONResponseHandler
                             WHERE event_pk = $event_fk;");
     
         if (!empty($result)) {
-
             $response = array();
             
             if (mysql_num_rows($result) > 0) {
@@ -49,10 +51,20 @@ class EVENT extends JSONResponseHandler
             }
 
         } else {
-            $this->json_response_error("Error getting event - Empty query given!")
+            $this->json_response_error("Error getting event - Empty query given!");
         }
     }
 
+    /** This method is used to create a new event entry in the database
+     * @param $start_point : Starting point of the ride
+     * @param $end_point : Final destination point of the ride
+     * @param $price : Listed price of the ride
+     * @param $seats_rem : Number of seats remaining in the car
+     * @param $depart_date : Estimated depart date and time
+     * @param $eta : Estimated arrival date and time
+     * @param $fb_fk : facebook fk of the driver/poster of the ride
+     * @param $description : Description written by the driver/poster of the ride
+     */
     public function create(
         $start_point,
         $end_point,
@@ -67,20 +79,20 @@ class EVENT extends JSONResponseHandler
         mysql_query("START TRANSACTION");
 
         $a1 = mysql_query("INSERT INTO events (start_point, end_point, price, seats_rem, depart_date, eta, fb_fk, description) 
-            VALUES ('$start_point', 
-                    '$end_point', 
-                    $price, 
-                    $seats_rem, 
-                    $depart_date,
-                    $eta,
-                    $fb_fk, 
-                    '$description');");
+                            VALUES ('$start_point',
+                                    '$end_point',
+                                    $price,
+                                    $seats_rem,
+                                    $depart_date,
+                                    $eta,
+                                    $fb_fk,
+                                    '$description');");
         $event_fk = mysql_insert_id();
         $a2 = mysql_query("INSERT INTO user_event_status (fb_fk, event_fk, is_driver, status)
-            VALUES ($fb_fk, 
-                $event_fk, 
-                1, 
-                'PENDING');");
+                            VALUES ($fb_fk,
+                                $event_fk,
+                                1,
+                                'PENDING');");
 
         $result = $a1 and $a2;
         if ($result) {
@@ -99,5 +111,3 @@ class EVENT extends JSONResponseHandler
         }
     }
 }
-
-?>

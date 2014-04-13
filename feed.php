@@ -3,17 +3,17 @@
 $params = array();
 
 if (isset($_GET['start_point'])) {
-    array_push($params, "events.start_point = '{$_GET['start_point']}'");
+    array_push($params, "e.start_point = '{$_GET['start_point']}'");
 } else if (isset($_GET['end_point'])) {
-    array_push($params, "events.end_point = '{$_GET['end_point']}'");
+    array_push($params, "e.end_point = '{$_GET['end_point']}'");
 } else if (isset($_GET['price'])) {
-    array_push($params, "events.price <= '{$_GET['price']}'");
+    array_push($params, "e.price <= {$_GET['price']}");
 } else if (isset($_GET['seats_rem'])) {
-    array_push($params, "events.seats_rem >= '{$_GET['seats_rem']}'");
+    array_push($params, "e.seats_rem >= {$_GET['seats_rem']}");
 } else if (isset($_GET['depart_date'])) {
-    array_push($params, "events.depart_date >= '{$_GET['depart_date']}'");
+    array_push($params, "e.depart_date >= {$_GET['depart_date']}");
 } else if (isset($_GET['eta'])) {
-    array_push($params, "events.eta <= '{$_GET['eta']}'");
+    array_push($params, "e.eta <= {$_GET['eta']}");
 }
 
 $sql = "";
@@ -33,8 +33,8 @@ $json = new JSONResponseHandler(); //JSON response to the app
 
 //Query to grab 25 events
 $result = mysql_query("SELECT * 
-                        FROM events e
-                        LEFT JOIN user u 
+                        FROM user u  
+                        INNER JOIN events e 
                         ON u.fb_fk = e.fb_fk" 
                         . $sql . 
                         " ORDER BY 1 DESC LIMIT 25;"); 
