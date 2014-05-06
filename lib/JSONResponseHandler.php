@@ -16,5 +16,3 @@ class JSONResponseHandler
         echo json_encode($response);
     }   
 }
-
-?>

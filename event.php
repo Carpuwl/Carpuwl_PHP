@@ -1,25 +1,24 @@
 <?php
-
-require_once dirname(__FILE__) . '/db_connect.php';
 require_once dirname(__FILE__) . '/lib/event_functions.php';
+require_once dirname(__FILE__) . '/lib/db_connect.php';
 require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
-//connect to database
-$db = new DB_CONNECT();
 $json = new JSONResponseHandler();
-$event = new EVENT();
+$db = DB_CONNECT::connect();
+$event = new Event($db);
 
 $response = array();
+$_GET['event_pk'] = 25;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['start_point']) 
-        && isset($_POST['end_point']) 
-        && isset($_POST['price']) 
-        && isset($_POST['seats_rem']) 
-        && isset($_POST['depart_date'])
-        && isset($_POST['eta'])
-        && isset($_POST['fb_fk'])
-        && isset($_POST['description'])) {
+    if (isset($_POST['start_point'],
+            $_POST['end_point'],
+            $_POST['price'],
+            $_POST['seats_rem'],
+            $_POST['depart_date'],
+            $_POST['eta'],
+            $_POST['fb_fk'],
+            $_POST['description'])) {
        
         $start_point = $_POST['start_point'];
         $end_point = $_POST['end_point'];
@@ -45,10 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (isset($_GET['event_fk'])) {
+    if (isset($_GET['event_pk'])) {
     
-        $event_fk = $_GET['event_fk']; 
-        $event->get($event_fk);
+        $event_pk = $_GET['event_pk'];
+        $event->get($event_pk);
     
     } else {
         $json->json_response_error("Required field(s) missing");
@@ -58,4 +57,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $json->json_response_error("Request Failed: REQUEST_METHOD not recognized");
 }
 
-?>
+$db->close();

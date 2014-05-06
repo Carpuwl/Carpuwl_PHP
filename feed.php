@@ -1,53 +1,84 @@
 <?php
+require_once dirname(__FILE__) . '/lib/db_connect.php';
+require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
+$sql_conditions = array();
+$types = "";
 $params = array();
-
 if (isset($_GET['start_point'])) {
-    array_push($params, "e.start_point = '{$_GET['start_point']}'");
+    array_push($sql_conditions, "e.start_point = ?");
+    array_push($params, $_GET['start_point']);
+    $types .= 's';
 }
 if (isset($_GET['end_point'])) {
-    array_push($params, "e.end_point = '{$_GET['end_point']}'");
+    array_push($sql_conditions, "e.end_point = ?");
+    array_push($params, $_GET['end_point']);
+    $types .= 's';
 }
 if (isset($_GET['price'])) {
-    array_push($params, "e.price <= {$_GET['price']}");
+    array_push($sql_conditions, "e.price <= ?");
+    array_push($params, $_GET['price']);
+    $types .= 'd';
 }
 if (isset($_GET['seats_rem'])) {
-    array_push($params, "e.seats_rem >= {$_GET['seats_rem']}");
+    array_push($sql_conditions, "e.seats_rem >= ?");
+    array_push($params, $_GET['seats_rem']);
+    $types .= 'i';
 }
 if (isset($_GET['depart_date'])) {
-    array_push($params, "e.depart_date >= {$_GET['depart_date']}");
+    array_push($sql_conditions, "e.depart_date >= ?");
+    array_push($params, $_GET['depart_date']);
+    $types .= 'd';
 }
 if (isset($_GET['eta'])) {
-    array_push($params, "e.eta <= {$_GET['eta']}");
+    array_push($sql_conditions, "e.eta <= ?");
+    array_push($params, $_GET['eta']);
+    $types .= 'd';
 }
 
 $sql = "";
-if (!empty($params)) {
-    $sql = " WHERE {$params[0]}";
-    for ($i = 1; $i < count($params); $i++) {
-        $sql .= " AND {$params[$i]}";
+if (!empty($sql_conditions)) {
+    foreach ($sql_conditions as $condition) {
+        $sql .= " AND {$condition}";
     }
 }
 
-require_once dirname(__FILE__) . '/db_connect.php';
-require_once dirname(__FILE__) . '/JSONResponseHandler.php';
-
-$respone = array(); //json response array
-$db = new DB_CONNECT(); //Establish database connection
 $json = new JSONResponseHandler(); //JSON response to the app
-//Query to grab 25 events
-$result = mysql_query("SELECT * 
-                        FROM user u  
-                        INNER JOIN events e
-                        ON u.fb_fk = e.fb_fk" 
-                        . $sql . 
-                        " ORDER BY 1 DESC LIMIT 25;"); 
-if (!empty($result)) {
-    $num_rows = mysql_num_rows($result);
+$db = DB_CONNECT::connect(); //Establish database connection
 
-    if ($num_rows > 0) {
+
+$time_now = new DateTime();
+$time_now = $time_now->getTimestamp() * 1000;
+$stmt = $db->prepare("
+        SELECT *
+        FROM user u
+        INNER JOIN events e
+        ON u.fb_fk = e.fb_fk
+        WHERE e.depart_date >= $time_now
+        {$sql}
+        ORDER BY e.depart_date ASC LIMIT 30;");
+
+if (!empty($params)) {
+    $a_params = array();
+    array_push($a_params, $types);
+    foreach ($params as $param) {
+        array_push($a_params, $param);
+    }
+
+    $refs = array();
+    foreach($a_params as $key => $value) {
+        $refs[$key] = &$a_params[$key];
+    }
+
+    call_user_func_array(array($stmt, 'bind_param'), $refs);
+}
+
+if ($stmt->execute()) {
+
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
         $feed = array();
-        while ($row = mysql_fetch_array($result)) {
+        while ($row = $result->fetch_assoc()) {
             $user = array (
                 'name' => $row['name'],
                 'rating' => $row['rating'],
@@ -80,8 +111,7 @@ if (!empty($result)) {
     }
 
 } else {
-     $json->json_response_error("Error getting event - Empty query received!");
+     $json->json_response_error("Error getting event - A database error occurred");
 }
 
-
-?>
+$stmt->close();

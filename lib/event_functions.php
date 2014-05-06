@@ -4,34 +4,39 @@ require_once dirname(__FILE__) . "/JSONResponseHandler.php";
 /**
 * Class that can be used to get and create an individual event
 */
-class EVENT extends JSONResponseHandler
-{    
-    public function __construct() {}
+class Event extends JSONResponseHandler
+{
+    public $db;
+
+    public function __construct($db) {
+        $this->db = $db;
+    }
 
     /** This method is used to retrieve the data for a specific event
-     * @param $event_fk : the fk of the event bring retrieved
+     * @param $event_pk : the pk of the event bring retrieved
      */
-    public function get ($event_fk) {
+    public function get ($event_pk) {
 
-        $result = mysql_query("SELECT * FROM events e
-                            LEFT JOIN user u 
-                            ON e.fb_fk = u.fb_fk
-                            WHERE event_pk = $event_fk;");
-    
-        if (!empty($result)) {
-            $response = array();
-            
-            if (mysql_num_rows($result) > 0) {
-                $row = mysql_fetch_array($result);
+        $stmt = $this->db->prepare("
+                    SELECT *
+                    FROM events e
+                    LEFT JOIN user u
+                    ON e.fb_fk = u.fb_fk
+                    WHERE event_pk = ?;");
+        $stmt->bind_param('d', $event_pk);
 
-                $user = array (
+        if ($stmt->execute()) {
+
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+
+                $response = array (
                     'name' => $row['name'],
                     'rating' => $row['rating'],
                     'num_ratings' => $row['num_ratings'],
-                    'phone' => $row['phone']
-                );
-
-                $event = array (
+                    'phone' => $row['phone'],
+                    'event_pk' => $row['event_pk'],
                     'start_point' => $row['start_point'],
                     'end_point' => $row['end_point'],
                     'price' => $row['price'],
@@ -42,8 +47,6 @@ class EVENT extends JSONResponseHandler
                     'description' => $row['description']
                 );
 
-                $response['user'] = $user;
-                $response['event'] = $event;
                 $this->json_response_success("Event successfully retrieved!", $response);
 
             } else {
@@ -51,8 +54,10 @@ class EVENT extends JSONResponseHandler
             }
 
         } else {
-            $this->json_response_error("Error getting event - Empty query given!");
+            $this->json_response_error("Error getting event - A Database error occurred!");
         }
+
+        $stmt->close();
     }
 
     /** This method is used to create a new event entry in the database
@@ -75,39 +80,61 @@ class EVENT extends JSONResponseHandler
         $fb_fk,
         $description) {
 
-        mysql_query("SET AUTOCOMMIT=0");
-        mysql_query("START TRANSACTION");
+        $stmt = $this->db->prepare("
+                    INSERT INTO events (
+                        start_point,
+                        end_point,
+                        price,
+                        seats_rem,
+                        depart_date,
+                        eta,
+                        fb_fk,
+                        description)
+                    VALUES (?,?,?,?,?,?,?,?);");
+        $stmt->bind_param('ssdiddds',
+            $start_point,
+            $end_point,
+            $price,
+            $seats_rem,
+            $depart_date,
+            $eta,
+            $fb_fk,
+            $description);
 
-        $a1 = mysql_query("INSERT INTO events (start_point, end_point, price, seats_rem, depart_date, eta, fb_fk, description) 
-                            VALUES ('$start_point',
-                                    '$end_point',
-                                    $price,
-                                    $seats_rem,
-                                    $depart_date,
-                                    $eta,
-                                    $fb_fk,
-                                    '$description');");
-        $event_fk = mysql_insert_id();
-        $a2 = mysql_query("INSERT INTO user_event_status (fb_fk, event_fk, is_driver, status)
-                            VALUES ($fb_fk,
-                                $event_fk,
-                                1,
-                                'PENDING');");
+        if ($stmt->execute()) {
+            //Getting the primary key of the previous statement
+            $result = $this->db->query("SELECT LAST_INSERT_ID();");
+            if ($result != FALSE) {
+                $event_pk = $result->fetch_all()[0][0]; //The result is the event_pk
+                $stmt = $this->db->prepare("
+                            INSERT INTO user_event_status (
+                                fb_fk,
+                                event_fk,
+                                is_driver,
+                                status)
+                            VALUES (?,?,?,?);");
+                $status = "PENDING";
+                $is_driver = true;
+                $stmt->bind_param('diis',
+                    $fb_fk,
+                    $event_pk,
+                    $is_driver,
+                    $status);
+                if ($stmt->execute()) {
+                    $this->json_response_success("Event successfully created!");
+                    $this->get($event_pk);
+                } else {
+                    $this->json_response_error("Entry into user_events_status table could not be made - A Database error occurred!");
+                }
 
-        $result = $a1 and $a2;
-        if ($result) {
-            mysql_query("COMMIT");
+            } else {
+                $this->json_response_error("Event PK could not be retrieved - A Database error occurred!");
+            }
+
         } else {
-            mysql_query("ROLLBACK");
+            $this->json_response_error("Event could not be created - A Database error occurred!");
         }
-        
-        $response = array();
 
-        if ($result) {
-            $response['event_fk'] = $event_fk;
-            $this->json_response_success("Event successfully created!", $response);
-        } else {
-            $this->json_response_error("Error occurred creating event");
-        }
+        $stmt->close();
     }
 }

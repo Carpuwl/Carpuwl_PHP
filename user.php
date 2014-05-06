@@ -1,14 +1,11 @@
 <?php
-require_once dirname(__FILE__) . '/db_connect.php';
 require_once dirname(__FILE__) . '/lib/user_functions.php';
+require_once dirname(__FILE__) . '/lib/db_connect.php';
 require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
-//connect to the database
-$db = new DB_CONNECT(); 
 $json = new JSONResponseHandler();
-$user = new USER();
-//json response array
-$response = array();
+$db = DB_CONNECT::connect();
+$user = new User($db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -16,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         && isset($_POST['phone']) //phone number of the user
         && isset($_POST['name'])) { //Name of the user
         
-        $fb_fk = doubleval($_POST['fb_fk']);
+        $fb_fk = $_POST['fb_fk'];
         $name = $_POST['name'];
         $phone = $_POST['phone'];       
 
@@ -30,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_GET['fb_fk'])) { //The user who's data is being extracted
     
-        $fb_fk = doubleval($_GET['fb_fk']);
+        $fb_fk = $_GET['fb_fk'];
 
         $user->get($fb_fk);
 
@@ -42,4 +39,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $json->json_response_error("Request Failed: REQUEST_METHOD not recognized");
 }
 
-?>
+$db->close();
