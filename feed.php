@@ -74,41 +74,30 @@ if (!empty($params)) {
 }
 
 if ($stmt->execute()) {
+    $stmt->store_result();
 
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $feed = array();
-        while ($row = $result->fetch_assoc()) {
-            $user = array (
-                'name' => $row['name'],
-                'rating' => $row['rating'],
-                'num_ratings' => $row['num_ratings'],
-                'phone' => $row['phone']
-            );
+    $meta = $stmt->result_metadata(); 
+    while ($field = $meta->fetch_field()) 
+    {   
+        $params[] = &$row[$field->name]; 
+    } 
 
-            $event = array (
-                'event_pk' => $row['event_pk'],
-                'start_point' => $row['start_point'],
-                'end_point' => $row['end_point'],
-                'price' => $row['price'],
-                'seats_rem' => $row['seats_rem'],
-                'depart_date' => $row['depart_date'],
-                'eta' => $row['eta'],
-                'fb_fk' => $row['fb_fk'],
-                'description' => $row['description']
-            );
+    call_user_func_array(array($stmt, 'bind_result'), $params); 
 
-            array_push($feed, $user + $event);
+    while ($stmt->fetch()) 
+    { 
+        foreach($row as $key => $val) 
+        { 
+            $c[$key] = $val; 
         }
 
-        $response['feed'] = $feed;
-        $json->json_response_success(
-            "Event successfully retrieved!",
-            $response);
-
-    } else {        
-        $json->json_response_error("Error getting event! - No results matching filter");
+        $result[] = $c; 
     }
+
+    $response['feed'] = $result;
+    $json->json_response_success(
+        "Event successfully retrieved!",
+        $response);
 
 } else {
      $json->json_response_error("Error getting event - A database error occurred");
