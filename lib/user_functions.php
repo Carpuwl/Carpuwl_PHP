@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__FILE__) . '/JSONResponseHandler.php';
+require_once dirname(__FILE__) . '/db_connect.php';
 
 /**
  * Class User can be used to retrieve and create individual users
@@ -8,8 +9,8 @@ class User extends JSONResponseHandler {
 
     public $db;
 
-    public function __construct($db) {
-        $this->db = $db;
+    public function __construct() {
+        $this->db = DB_CONNECT::connect();
     }
 
     /** Used to fetch a specified user
@@ -19,13 +20,11 @@ class User extends JSONResponseHandler {
 
         $stmt = $this->db->prepare("SELECT * FROM user WHERE fb_fk = ?;");
         if ($stmt) {
-            $stmt->bind_param('d', $fb_fk);
 
-            if ($stmt->execute()) {
+            if ($stmt->execute(array($fb_fk))) {
 
-                $result = $stmt->get_result();
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
+                if ($stmt->rowCount() > 0) {
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     $response['user'] = array (
                         'name' => $row['name'],
@@ -44,10 +43,11 @@ class User extends JSONResponseHandler {
                 $this->json_response_error("A database error occured, could not get user!");
             }
         } else {
-            $this->json_response_error("Mysqli stmt could not be created!");
+            $this->json_response_error("PDO stmt could not be created!");
         }
 
-        $stmt->close();
+        $stmt->closeCursor();
+        unset($this->db);
     }
 
     /** Used to sign in a user or create one if it does not already exist in the database
@@ -60,11 +60,10 @@ class User extends JSONResponseHandler {
         //See if the user already exists in the database
         $stmt = $this->db->prepare("SELECT * FROM user WHERE fb_fk = ?;");
         if ($stmt) {
-            $stmt->bind_param('d', $fb_fk);
-            if ($stmt->execute()) {
 
-                $result = $stmt->get_result();
-                if ($result->num_rows == 1) {
+            if ($stmt->execute(array($fb_fk))) {
+
+                if ($stmt->rowCount() == 1) {
                     //If the user exists, sign in
                     $this->json_response_success("User successfully signed in!");
 
@@ -73,9 +72,9 @@ class User extends JSONResponseHandler {
                     $stmt = $this->db->prepare("
                             INSERT INTO user (fb_fk, name, phone)
                             VALUES (?, ?, ?);");
-                    $stmt->bind_param('dss', $fb_fk, $name, $phone);
+                    $params = array ($fb_fk, $name, $phone);
 
-                    if ($stmt->execute()) {
+                    if ($stmt->execute($params)) {
                         $this->json_response_success("User successfully created!");
                     } else {
                         $this->json_response_error("Error occurred creating a user");
@@ -86,10 +85,11 @@ class User extends JSONResponseHandler {
                 $this->json_response_error("Error creating user - A Database error occurred!");
             }
         } else {
-            $this->json_response_error("Mysqli stmt could not be created!");
+            $this->json_response_error("PDO stmt could not be created!");
         }
 
-        $stmt->close();
+        $stmt->closeCursor();
+        unset($this->db);
     }
 
 }

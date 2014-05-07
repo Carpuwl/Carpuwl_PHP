@@ -60,64 +60,52 @@ if ($_SERVER['REQUEST_METHOD'] === "GET") {
         {$sql}
         ORDER BY e.depart_date ASC LIMIT 30;");
 
-    if (!empty($params)) {
-        $a_params = array();
-        array_push($a_params, $types);
-        foreach ($params as $param) {
-            array_push($a_params, $param);
-        }
+    if ($stmt) {
 
-        $refs = array();
-        foreach($a_params as $key => $value) {
-            $refs[$key] = &$a_params[$key];
-        }
+        if ($stmt->execute($params)) {
 
-        call_user_func_array(array($stmt, 'bind_param'), $refs);
-    }
+            if ($stmt->rowCount() > 0) {
+                $feed = array();
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $user = array (
+                        'name' => $row['name'],
+                        'rating' => $row['rating'],
+                        'num_ratings' => $row['num_ratings'],
+                        'phone' => $row['phone']
+                    );
 
-    if ($stmt->execute()) {
+                    $event = array (
+                        'event_pk' => $row['event_pk'],
+                        'start_point' => $row['start_point'],
+                        'end_point' => $row['end_point'],
+                        'price' => $row['price'],
+                        'seats_rem' => $row['seats_rem'],
+                        'depart_date' => $row['depart_date'],
+                        'eta' => $row['eta'],
+                        'fb_fk' => $row['fb_fk'],
+                        'description' => $row['description']
+                    );
 
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $feed = array();
-            while ($row = $result->fetch_assoc()) {
-                $user = array (
-                    'name' => $row['name'],
-                    'rating' => $row['rating'],
-                    'num_ratings' => $row['num_ratings'],
-                    'phone' => $row['phone']
-                );
+                    array_push($feed, $user + $event);
+                }
 
-                $event = array (
-                    'event_pk' => $row['event_pk'],
-                    'start_point' => $row['start_point'],
-                    'end_point' => $row['end_point'],
-                    'price' => $row['price'],
-                    'seats_rem' => $row['seats_rem'],
-                    'depart_date' => $row['depart_date'],
-                    'eta' => $row['eta'],
-                    'fb_fk' => $row['fb_fk'],
-                    'description' => $row['description']
-                );
+                $response['feed'] = $feed;
+                $json->json_response_success("Event successfully retrieved!", $response);
 
-                array_push($feed, $user + $event);
+            } else {
+                $json->json_response_error("Error getting event! - No results matching filter");
             }
 
-            $response['feed'] = $feed;
-            $json->json_response_success(
-                "Event successfully retrieved!",
-                $response);
-
         } else {
-            $json->json_response_error("Error getting event! - No results matching filter");
+            $json->json_response_error("Error getting event - A database error occurred");
         }
 
     } else {
-        $json->json_response_error("Error getting event - A database error occurred");
+        $json->json_response_error("Error: PDO stmt could not be created!");
     }
 
-    $stmt->close();
-    $db->close();
+    $stmt->closeCursor();
+    unset($db);
 
 } else {
     $json->json_response_error("Request Failed: REQUEST_METHOD not recognized");

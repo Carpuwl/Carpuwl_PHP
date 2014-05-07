@@ -12,7 +12,7 @@ class JSONResponseHandler
 
     public function json_response_error ($e, $response = array()) {
         $response['success'] = 0;
-        $response['message'] = $e;
+        $response['message'] = "Error: ". $e;
         echo json_encode($response);
     }   
 }

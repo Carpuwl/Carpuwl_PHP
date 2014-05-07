@@ -4,8 +4,7 @@ require_once dirname(__FILE__) . '/lib/db_connect.php';
 require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
 $json = new JSONResponseHandler();
-$db = DB_CONNECT::connect();
-$user = new User($db);
+$user = new User();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -38,5 +37,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } else {
     $json->json_response_error("Request Failed: REQUEST_METHOD not recognized");
 }
-
-$db->close();

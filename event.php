@@ -4,11 +4,8 @@ require_once dirname(__FILE__) . '/lib/db_connect.php';
 require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
 $json = new JSONResponseHandler();
-$db = DB_CONNECT::connect();
-$event = new Event($db);
-
+$event = new Event();
 $response = array();
-$_GET['event_pk'] = 25;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['start_point'],
@@ -56,5 +53,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } else {
     $json->json_response_error("Request Failed: REQUEST_METHOD not recognized");
 }
-
-$db->close();

@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__FILE__) . "/JSONResponseHandler.php";
+require_once dirname(__FILE__) . "/db_connect.php";
 
 /**
 * Class that can be used to get and create an individual event
@@ -8,8 +9,8 @@ class Event extends JSONResponseHandler
 {
     public $db;
 
-    public function __construct($db) {
-        $this->db = $db;
+    public function __construct() {
+        $this->db = DB_CONNECT::connect();
     }
 
     /** This method is used to retrieve the data for a specific event
@@ -24,13 +25,12 @@ class Event extends JSONResponseHandler
                     ON e.fb_fk = u.fb_fk
                     WHERE event_pk = ?;");
         if ($stmt) {
-            $stmt->bind_param('d', $event_pk);
 
-            if ($stmt->execute()) {
+            $params = array($event_pk);
+            if ($stmt->execute($params)) {
 
-                $result = $stmt->get_result();
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
+                if ($stmt->rowCount() > 0) {
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     $response = array (
                         'name' => $row['name'],
@@ -51,17 +51,18 @@ class Event extends JSONResponseHandler
                     $this->json_response_success("Event successfully retrieved!", $response);
 
                 } else {
-                    $this->json_response_error("Error getting event!");
+                    $this->json_response_error("Error getting event! - No rows returned");
                 }
 
             } else {
-                $this->json_response_error("Error getting event - A Database error occurred!");
+                $this->json_response_error("Error getting event - A Database error occurred while executing the stmt!");
             }
         } else {
-            $this->json_response_error("Error: Mysqli stmt could not be created!");
+            $this->json_response_error("PDO stmt could not be created!");
         }
 
-        $stmt->close();
+        $stmt->closeCursor();
+        unset($this->db);
     }
 
     /** This method is used to create a new event entry in the database
@@ -96,7 +97,7 @@ class Event extends JSONResponseHandler
                         description)
                     VALUES (?,?,?,?,?,?,?,?);");
         if ($stmt) {
-            $stmt->bind_param('ssdiddds',
+            $params = array(
                 $start_point,
                 $end_point,
                 $price,
@@ -106,11 +107,11 @@ class Event extends JSONResponseHandler
                 $fb_fk,
                 $description);
 
-            if ($stmt->execute()) {
+            if ($stmt->execute($params)) {
                 //Getting the primary key of the previous statement
-                $result = $this->db->query("SELECT LAST_INSERT_ID();");
-                if ($result != FALSE) {
-                    $event_pk = $result->fetch_all()[0][0]; //The result is the event_pk
+                $stmt = $this->db->query("SELECT LAST_INSERT_ID();");
+                if ($stmt != FALSE) {
+                    $event_pk = $stmt->fetch(PDO::FETCH_BOTH)[0]; //The result is the event_pk
                     $stmt = $this->db->prepare("
                             INSERT INTO user_event_status (
                                 fb_fk,
@@ -120,12 +121,9 @@ class Event extends JSONResponseHandler
                             VALUES (?,?,?,?);");
                     $status = "PENDING";
                     $is_driver = true;
-                    $stmt->bind_param('diis',
-                        $fb_fk,
-                        $event_pk,
-                        $is_driver,
-                        $status);
-                    if ($stmt->execute()) {
+                    $params = array($fb_fk, $event_pk, $is_driver, $status);
+
+                    if ($stmt->execute($params)) {
                         $this->json_response_success("Event successfully created!");
                         $this->get($event_pk);
                     } else {
@@ -133,16 +131,17 @@ class Event extends JSONResponseHandler
                     }
 
                 } else {
-                    $this->json_response_error("Event PK could not be retrieved - A Database error occurred!");
+                    $this->json_response_error("Event PK could not be retrieved - A Database error occurred, the query was not executed correctly!");
                 }
 
             } else {
-                $this->json_response_error("Event could not be created - A Database error occurred!");
+                $this->json_response_error("Event could not be created - A Database error occurred while executing the stmt!");
             }
         } else {
-            $this->json_response_error("Error: Mysqli stmt could not be created!");
+            $this->json_response_error("PDO stmt could not be created!");
         }
 
-        $stmt->close();
+        $stmt->closeCursor();
+        unset($this->db);
     }
 }
