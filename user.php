@@ -9,9 +9,9 @@ $user = new User($db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (isset($_POST['fb_fk']) //fb link of the user 
-        && isset($_POST['phone']) //phone number of the user
-        && isset($_POST['name'])) { //Name of the user
+    if (isset($_POST['fb_fk'], //fb link of the user
+        $_POST['phone'], //phone number of the user
+        $_POST['name'])) { //Name of the user
         
         $fb_fk = $_POST['fb_fk'];
         $name = $_POST['name'];

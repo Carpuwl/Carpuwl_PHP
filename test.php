@@ -6,22 +6,27 @@ require_once dirname(__FILE__) . '/lib/db_connect.php';
 require_once dirname(__FILE__) . '/lib/user_functions.php';
 require_once dirname(__FILE__) . '/lib/event_functions.php';
 
-$date = new DateTime();
-print_r($date->getTimestamp() * 100);
-die();
+$dsn = 'mysql:dbname=test;host=localhost';
 
-$db = DB_CONNECT::connect();
+try {
+    $db = new PDO($dsn, 'root', '');
+} catch (PDOException $e) {
+    echo 'Connection failed: ' . $e->getMessage();
+}
 
-$fb_fk = 100002178190500;
-
-$event = new Event($db);
-//$event->create("Narnia", "Naboo", 99.99, 3, 1234567890, 1234567890, $fb_fk, "Test");
-$event->get(23);
-
-
-
-$user = new User($db);
-$user->get($fb_fk);
-$user->create($fb_fk, "Christopher Ciufo", "1234567890");
+$stmt = $db->prepare('SELECT * FROM user WHERE name = ?;');
+$params = array('Christopher Ciufo');
+/*$stmt->bindParam('s', $name);*/
+$stmt->execute($params);
+$result = $stmt->fetchObject();
+print_r($result);
+$stmt->closeCursor();
+unset($db);
 
 
+/*$db = DB_CONNECT::connect();
+$stmt = $db->prepare("SELECT name FROM user;");
+$stmt->execute();
+$stmt->bind_result($name);
+$stmt->fetch();
+print_r($name);*/
