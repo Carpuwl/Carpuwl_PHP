@@ -3,39 +3,32 @@ require_once dirname(__FILE__) . '/lib/db_connect.php';
 require_once dirname(__FILE__) . '/lib/JSONResponseHandler.php';
 
 $sql_conditions = array();
-$types = "";
 $params = array();
 if ($_SERVER['REQUEST_METHOD'] === "GET") {
 
     if (isset($_GET['start_point'])) {
         array_push($sql_conditions, "e.start_point = ?");
         array_push($params, $_GET['start_point']);
-        $types .= 's';
     }
     if (isset($_GET['end_point'])) {
         array_push($sql_conditions, "e.end_point = ?");
         array_push($params, $_GET['end_point']);
-        $types .= 's';
     }
     if (isset($_GET['price'])) {
         array_push($sql_conditions, "e.price <= ?");
         array_push($params, $_GET['price']);
-        $types .= 'd';
     }
     if (isset($_GET['seats_rem'])) {
         array_push($sql_conditions, "e.seats_rem >= ?");
         array_push($params, $_GET['seats_rem']);
-        $types .= 'i';
     }
     if (isset($_GET['depart_date'])) {
         array_push($sql_conditions, "e.depart_date >= ?");
         array_push($params, $_GET['depart_date']);
-        $types .= 'd';
     }
     if (isset($_GET['eta'])) {
         array_push($sql_conditions, "e.eta <= ?");
         array_push($params, $_GET['eta']);
-        $types .= 'd';
     }
 
     $sql = "";
