@@ -61,7 +61,8 @@ class User extends JSONResponseHandler {
         $stmt = $this->db->prepare("SELECT * FROM user WHERE fb_fk = ?;");
         if ($stmt) {
 
-            if ($stmt->execute(array($fb_fk))) {
+            $params = array($fb_fk);
+            if ($stmt->execute($params)) {
 
                 if ($stmt->rowCount() == 1) {
                     //If the user exists, sign in

@@ -124,7 +124,6 @@ class Event extends JSONResponseHandler
                     $params = array($fb_fk, $event_pk, $is_driver, $status);
 
                     if ($stmt->execute($params)) {
-                        $this->json_response_success("Event successfully created!");
                         $this->get($event_pk);
                     } else {
                         $this->json_response_error("Entry into user_events_status table could not be made - A Database error occurred!");

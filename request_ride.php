@@ -20,20 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
                               FROM user_event_status
                               WHERE fb_fk = ?
                               AND event_fk = ?;");
-        $stmt->bind_param('dd', $user_pk, $event_pk);
-        $stmt->execute();
+        $params = array($user_pk, $event_pk);
+        $stmt->execute($params);
 
         $response['is_requested'] = 0;
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
+        if ($stmt->rowCount() > 0) {
             $response['is_requested'] = 1;
             $json->json_response_success("Event status already created!", $response);
         } else {
             $stmt = $db->prepare("INSERT INTO user_event_status (fb_fk, event_fk, is_driver, status)
                               VALUES (?,?,?,?);");
             if ($stmt) {
-                $stmt->bind_param('sdis', $user_pk, $event_pk, $is_driver, $status);
-                if ($stmt->execute()) {
+                $params = array($user_pk, $event_pk, $is_driver, $status);
+                if ($stmt->execute($params)) {
                     $json->json_response_success("Request successful", $response);
                 } else {
                     $json->json_response_error("Request Failed");
@@ -43,8 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             }
         }
 
-        $stmt->close();
-        $db->close();
+        $stmt->closeCursor();
+        unset ($db);
 
     } else {
         $json->json_response_error("Required field(s) missing!");
